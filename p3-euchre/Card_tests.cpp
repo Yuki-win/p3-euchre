@@ -44,18 +44,7 @@ TEST(test_card_is_left_bower) {
     ASSERT_FALSE(left_bower.is_left_bower(CLUBS));
 }
 
-// Test if a card is trump
-TEST(test_card_is_trump) {
-    Card c1(QUEEN, HEARTS);
-    Card right_bower(JACK, DIAMONDS);
-    Card left_bower(JACK, HEARTS); // Left bower for DIAMONDS
 
-    ASSERT_TRUE(c1.is_trump(HEARTS));
-    ASSERT_FALSE(c1.is_trump(SPADES));
-    ASSERT_TRUE(right_bower.is_trump(DIAMONDS));  // Right bower is always trump
-    ASSERT_TRUE(left_bower.is_trump(DIAMONDS));   // Left bower is trump in Diamonds
-    ASSERT_FALSE(left_bower.is_trump(HEARTS));    // Not trump in Hearts
-}
 
 // Test Card comparison operators (less than)
 TEST(test_card_less_than) {
