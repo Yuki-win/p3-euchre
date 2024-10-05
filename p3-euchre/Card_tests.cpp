@@ -72,4 +72,28 @@ TEST(test_suit_next) {
     ASSERT_EQUAL(HEARTS, Suit_next(DIAMONDS));
 }
 
+TEST(test_card_comparison_different_suits) {
+    Card ace_spades(ACE, SPADES);
+    Card ace_hearts(ACE, HEARTS);
+    ASSERT_TRUE(ace_spades < ace_hearts);  // Ensure proper comparison across suits
+}
+
+TEST(test_card_comparison_same_suit) {
+    Card ace_spades(ACE, SPADES);
+    Card ten_spades(TEN, SPADES);
+    ASSERT_TRUE(ten_spades < ace_spades);  // Ensure proper comparison within the same suit
+}
+
+TEST(test_card_bowers) {
+    Card jack_spades(JACK, SPADES);
+    Card jack_clubs(JACK, CLUBS);  // Left bower if spades is trump
+    ASSERT_TRUE(jack_spades.is_right_bower(SPADES));
+    ASSERT_TRUE(jack_clubs.is_left_bower(SPADES));
+}
+
+
+
+
+
+
 TEST_MAIN()
