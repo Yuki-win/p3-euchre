@@ -91,7 +91,35 @@ TEST(test_card_bowers) {
     ASSERT_TRUE(jack_clubs.is_left_bower(SPADES));
 }
 
+TEST(test_card_trump_vs_non_trump) {
+    Card ace_hearts(ACE, HEARTS);  // Non-trump
+    Card nine_spades(NINE, SPADES);  // Trump
+    ASSERT_TRUE(nine_spades.is_trump(SPADES));
+    ASSERT_TRUE(Card_less(ace_hearts, nine_spades, SPADES));  // Trump beats non-trump
+}
+TEST(test_card_bowers_comparison) {
+    Card jack_hearts(JACK, HEARTS);  // Left Bower if diamonds is trump
+    Card jack_diamonds(JACK, DIAMONDS);  // Right Bower
+    ASSERT_TRUE(jack_hearts.is_left_bower(DIAMONDS));
+    ASSERT_TRUE(jack_diamonds.is_right_bower(DIAMONDS));
+    ASSERT_TRUE(Card_less(jack_hearts, jack_diamonds, DIAMONDS));  // Right Bower beats Left Bower
+}
+TEST(test_card_trump_comparison) {
+    Card ace_spades(ACE, SPADES);
+    Card king_spades(KING, SPADES);
+    ASSERT_TRUE(Card_less(king_spades, ace_spades, SPADES));  // Trump suit comparison, Ace beats King
+}
 
+TEST(test_card_non_trump_comparison) {
+    Card ace_clubs(ACE, CLUBS);
+    Card king_clubs(KING, CLUBS);
+    ASSERT_TRUE(Card_less(king_clubs, ace_clubs, SPADES));  // Non-trump comparison, Ace beats King
+}
+TEST(test_card_led_vs_trump) {
+    Card ace_clubs(ACE, CLUBS);  // Led suit
+    Card nine_spades(NINE, SPADES);  // Trump suit
+    ASSERT_TRUE(Card_less(ace_clubs, nine_spades, SPADES));  // Trump beats led suit if no matching suit
+}
 
 
 
