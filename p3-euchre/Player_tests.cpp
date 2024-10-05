@@ -108,9 +108,7 @@ TEST(test_simple_player_play_card) {
     delete alice;
 }
 
-#include "Player.hpp"  // 确保包含 Player.hpp 头文件
-#include "Card.hpp"
-#include "unit_test_framework.hpp"
+
 
 TEST(test_simple_player_lead_highest_non_trump) {
     Player* player = Player_factory("TestPlayer", "Simple");  // 使用 Player_factory 创建 SimplePlayer 实例
@@ -126,21 +124,18 @@ TEST(test_simple_player_lead_highest_non_trump) {
     delete player;  // 确保删除指针，避免内存泄漏
 }
 
-TEST(test_simple_player_follow_suit) {
+TEST(test_simple_player_cannot_follow_suit) {
     Player* player = Player_factory("TestPlayer", "Simple");  // 使用 Player_factory 创建 SimplePlayer 实例
-    player->add_card(Card(ACE, HEARTS));
-    player->add_card(Card(KING, HEARTS)); 
+    player->add_card(Card(ACE, SPADES));
+    player->add_card(Card(KING, SPADES)); 
     player->add_card(Card(QUEEN, SPADES)); 
-    player->add_card(Card(JACK, HEARTS));
+    player->add_card(Card(JACK, SPADES));
     player->add_card(Card(TEN, DIAMONDS));
-
     Card led_card = Card(KING, HEARTS);  // Leading hearts
     Card played_card = player->play_card(led_card, SPADES);  // Trump is spades
-    ASSERT_EQUAL(played_card, Card(ACE, HEARTS));  // Player must follow suit and play highest card
-
+    ASSERT_EQUAL(played_card, Card(TEN, DIAMONDS));  // Player must play lowest card since they can't follow suit
     delete player;
 }
-
 
 
 TEST_MAIN()
