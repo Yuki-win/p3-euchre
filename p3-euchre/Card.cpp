@@ -147,17 +147,18 @@ bool Card::is_left_bower(Suit trump) const {
 
 // Check if the card is a trump card (either from trump suit or left bower)
 bool Card::is_trump(Suit trump) const {
-    // The card is trump if it's in the trump suit, or if it's the left bower (Jack of the next suit)
-    if (suit == trump || is_left_bower(trump)) {
-        return true;
-    }
-
-    // Right bower (Jack of the trump suit) is trump
+    // Right bower (Jack of the trump suit) is always trump
     if (is_right_bower(trump)) {
         return true;
     }
 
-    return false;
+    // Left bower (Jack of the next suit) is trump, but only if the trump is the opposite color
+    if (is_left_bower(trump)) {
+        return true;
+    }
+
+    // Regular trump suit cards are trump
+    return suit == trump;
 }
 
 ///////////////////// Operator Overloading ///////////////////////////
