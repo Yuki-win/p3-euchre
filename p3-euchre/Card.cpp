@@ -229,10 +229,15 @@ Suit Suit_next(Suit suit) {
 
 // Compare two cards, considering trump
 bool Card_less(const Card &a, const Card &b, Suit trump) {
+    // Ensure cards are not the same
+    if (a == b) {
+        return false;  // a card is never less than itself
+    }
+
     // Check for bower (special trump rules)
     if (a.is_right_bower(trump)) return false;  // Right bower is always the highest
     if (b.is_right_bower(trump)) return true;
-    if (a.is_left_bower(trump)) return false;
+    if (a.is_left_bower(trump)) return false;   // Left bower is also very strong
     if (b.is_left_bower(trump)) return true;
 
     // Compare by trump status
@@ -244,7 +249,6 @@ bool Card_less(const Card &a, const Card &b, Suit trump) {
     // If both are non-trump or both are trump, compare by rank
     return a.get_rank() < b.get_rank();
 }
-
 // Compare two cards considering the trump suit and the led suit
 bool Card_less(const Card &a, const Card &b, const Card &led_card, Suit trump) {
     // If one card follows the led suit and the other doesn't, led suit card wins
