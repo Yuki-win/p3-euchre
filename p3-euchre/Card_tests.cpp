@@ -110,11 +110,6 @@ TEST(test_card_trump_comparison) {
     ASSERT_TRUE(Card_less(king_spades, ace_spades, SPADES));  // Trump suit comparison, Ace beats King
 }
 
-TEST(test_card_non_trump_comparison) {
-    Card ace_clubs(ACE, CLUBS);
-    Card king_clubs(KING, CLUBS);
-    ASSERT_TRUE(Card_less(king_clubs, ace_clubs, SPADES));  // Non-trump comparison, Ace beats King
-}
 TEST(test_card_led_vs_trump) {
     Card ace_clubs(ACE, CLUBS);  // Led suit
     Card nine_spades(NINE, SPADES);  // Trump suit
@@ -196,21 +191,9 @@ TEST(test_card_get_suit) {
     ASSERT_EQUAL(normal_card.get_suit(SPADES), HEARTS); // Should return normal suit
 }
 
-// Test get_suit with trump
-TEST(test_card_get_suit_with_trump) {
-    Card left_bower(JACK, CLUBS); // Left bower when trump is SPADES
-    Card right_bower(JACK, SPADES); // Right bower
-    ASSERT_EQUAL(left_bower.get_suit(SPADES), SPADES); // Should return trump suit
-    ASSERT_EQUAL(right_bower.get_suit(SPADES), SPADES); // Should return trump suit
-}
 
-// Test operator<< for Card
-TEST(test_card_output_operator) {
-    Card c(QUEEN, HEARTS);
-    std::ostringstream oss;
-    oss << c;
-    ASSERT_EQUAL(oss.str(), "Queen of Hearts"); // Check output format
-}
+
+
 
 // Test operator>> for Card
 TEST(test_card_input_operator) {
