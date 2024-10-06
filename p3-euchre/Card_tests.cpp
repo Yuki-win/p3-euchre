@@ -121,6 +121,130 @@ TEST(test_card_led_vs_trump) {
     ASSERT_TRUE(Card_less(ace_clubs, nine_spades, SPADES));  // Trump beats led suit if no matching suit
 }
 
+// Test is_trump method
+TEST(test_card_is_trump) {
+    Card trump_card(ACE, SPADES); // Trump card
+    Card non_trump_card(KING, HEARTS); // Non-trump card
+    ASSERT_TRUE(trump_card.is_trump(SPADES)); // Should be true for trump suit
+    ASSERT_FALSE(non_trump_card.is_trump(SPADES)); // Should be false for non-trump suit
+}
+
+// Test get_suit method with trump
+TEST(test_card_get_suit) {
+    Card left_bower(JACK, CLUBS); // Left bower when trump is SPADES
+    Card normal_card(QUEEN, HEARTS);
+    ASSERT_EQUAL(left_bower.get_suit(SPADES), SPADES); // Should return trump suit
+    ASSERT_EQUAL(normal_card.get_suit(SPADES), HEARTS); // Should return normal suit
+}
+
+// Test get_suit with trump
+TEST(test_card_get_suit_with_trump) {
+    Card left_bower(JACK, CLUBS); // Left bower when trump is SPADES
+    Card right_bower(JACK, SPADES); // Right bower
+    ASSERT_EQUAL(left_bower.get_suit(SPADES), SPADES); // Should return trump suit
+    ASSERT_EQUAL(right_bower.get_suit(SPADES), SPADES); // Should return trump suit
+}
+
+// Test operator<< for Card
+TEST(test_card_output_operator) {
+    Card c(QUEEN, HEARTS);
+    std::ostringstream oss;
+    oss << c;
+    ASSERT_EQUAL(oss.str(), "Queen of Hearts"); // Check output format
+}
+
+// Test operator>> for Card
+TEST(test_card_input_operator) {
+    Card c;
+    std::istringstream iss("King of Diamonds");
+    iss >> c;
+    ASSERT_EQUAL(KING, c.get_rank());
+    ASSERT_EQUAL(DIAMONDS, c.get_suit());
+}
+
+
+
+// Test comparison with trump
+TEST(test_card_comparison_with_trump) {
+    Card ace_spades(ACE, SPADES);
+    Card king_spades(KING, SPADES);
+    Card ace_hearts(ACE, HEARTS);
+    ASSERT_TRUE(Card_less(king_spades, ace_spades, SPADES)); // Ace beats King in trump suit
+    ASSERT_TRUE(Card_less(ace_hearts, king_spades, SPADES)); // Non-trump comparison
+}
+
+// Test Card comparison operators (greater than)
+TEST(test_card_greater_than) {
+    Card c1(ACE, SPADES);
+    Card c2(KING, SPADES);
+    ASSERT_TRUE(c1 > c2);
+    ASSERT_FALSE(c2 > c1);
+}
+
+// Test Card comparison operators (greater than or equal)
+TEST(test_card_greater_than_or_equal) {
+    Card c1(ACE, SPADES);
+    Card c2(ACE, SPADES);
+    ASSERT_TRUE(c1 >= c2);
+
+}
+
+// Test Card comparison operators (less than or equal)
+TEST(test_card_less_than_or_equal) {
+    Card c1(ACE, SPADES);
+    Card c2(KING, SPADES);
+    ASSERT_TRUE(c2 <= c1);
+    ASSERT_FALSE(c1 <= c2);
+}
+
+// Test Card_less function with trump
+TEST(test_card_less_with_trump) {
+    Card ace_spades(ACE, SPADES);
+    Card king_spades(KING, SPADES);
+    Card nine_hearts(NINE, HEARTS);
+    ASSERT_TRUE(Card_less(king_spades, ace_spades, SPADES)); // Ace beats King in trump suit
+    ASSERT_TRUE(Card_less(nine_hearts, king_spades, SPADES)); // Non-trump comparison
+}
+
+// Test all face cards and ace recognition
+TEST(test_card_face_or_ace_recognition) {
+    Card face_cards[] = {
+        Card(JACK, SPADES),
+        Card(QUEEN, SPADES),
+        Card(KING, SPADES),
+        Card(ACE, SPADES)
+    };
+    for (const auto& card : face_cards) {
+        ASSERT_TRUE(card.is_face_or_ace());
+    }
+}
+
+// Test comparison operators with edge cases
+TEST(test_card_comparison_edge_cases) {
+    Card c1(ACE, SPADES);
+    Card c2(ACE, HEARTS);
+    Card c3(KING, SPADES);
+    ASSERT_TRUE(c1 > c3); // Ace should be greater than King
+    ASSERT_TRUE(c1 >= c1); // Ace should be equal to itself
+    ASSERT_TRUE(c2 > c1); // Ace of Hearts should be less than Ace of Spades
+}
+
+// Test Card_less function with edge cases
+TEST(test_card_less_edge_cases) {
+    Card ace_spades(ACE, SPADES);
+    Card king_spades(KING, SPADES);
+    Card ace_hearts(ACE, HEARTS);
+    ASSERT_TRUE(Card_less(king_spades, ace_spades, SPADES)); // Ace beats King in trump suit
+    ASSERT_TRUE(Card_less(ace_hearts, king_spades, SPADES)); // Non-trump comparison
+}
+
+// Test get_suit method with trump edge cases
+TEST(test_card_get_suit_edge_cases) {
+    Card left_bower(JACK, CLUBS); // Left bower when trump is SPADES
+    Card normal_card(QUEEN, HEARTS);
+    ASSERT_EQUAL(left_bower.get_suit(SPADES), SPADES); // Should return trump suit
+    ASSERT_EQUAL(normal_card.get_suit(SPADES), HEARTS); // Should return normal suit
+}
 
 
 
