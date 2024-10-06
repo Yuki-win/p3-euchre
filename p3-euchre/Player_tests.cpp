@@ -362,4 +362,104 @@ TEST(test_simple_player_make_trump_with_bowers) {
     delete alice;
 }
 
+
+// Test adding cards to the player's hand
+TEST(test_simple_player_add_card) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Add cards in a non-sorted order
+    alice->add_card(Card(QUEEN, HEARTS));
+    alice->add_card(Card(ACE, SPADES));
+    alice->add_card(Card(KING, DIAMONDS));
+
+    // Check if the cards are sorted correctly
+    // The expected order should be: King of Diamonds, Queen of Hearts, Ace of Spades
+    ASSERT_EQUAL(alice->play_card(Card(QUEEN, HEARTS), SPADES), Card(QUEEN, HEARTS));
+    ASSERT_EQUAL(alice->play_card(Card(ACE, SPADES), SPADES), Card(ACE, SPADES));
+    ASSERT_EQUAL(alice->play_card(Card(KING, DIAMONDS), SPADES), Card(KING, DIAMONDS));
+
+    delete alice;
+}
+
+// Test adding and discarding cards
+TEST(test_simple_player_add_and_discard) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Add cards to the player's hand
+    alice->add_and_discard(Card(QUEEN, HEARTS)); // Discard the lowest card
+    alice->add_and_discard(Card(ACE, SPADES));   // Discard the lowest card
+    alice->add_and_discard(Card(KING, DIAMONDS)); // Discard the lowest card
+
+    // Check the remaining cards in hand
+    // The player should have only the highest card left
+    ASSERT_EQUAL(alice->play_card(Card(QUEEN, HEARTS), SPADES), Card(KING, DIAMONDS));
+
+    delete alice;
+}
+
+// Test SimplePlayer making trump when there are no trump cards
+TEST(test_simple_player_no_trump_cards) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Simulate a hand with no trump cards
+    alice->add_card(Card(NINE, CLUBS));
+    alice->add_card(Card(TEN, DIAMONDS));
+
+    // Test passing on making trump
+    Card upcard(QUEEN, SPADES);  // Spades is proposed as trump
+    Suit order_up_suit;
+    ASSERT_FALSE(alice->make_trump(upcard, false, 1, order_up_suit));
+
+    delete alice;
+}
+// Test SimplePlayer making trump when there are no trump cards
+TEST(test_simple_player_make_trump_no_trump_cards) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Simulate a hand with no trump cards
+    alice->add_card(Card(NINE, CLUBS));
+    alice->add_card(Card(TEN, DIAMONDS));
+
+    // Test passing on making trump
+    Card upcard(QUEEN, SPADES);  // Spades is proposed as trump
+    Suit order_up_suit;
+    ASSERT_FALSE(alice->make_trump(upcard, false, 1, order_up_suit));
+
+    delete alice;
+}
+
+// Test adding duplicate cards
+TEST(test_simple_player_add_duplicate_card) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Add a card
+    Card ace_spades(ACE, SPADES);
+    alice->add_card(ace_spades);
+    alice->add_card(ace_spades); // Add the same card again
+
+    // Check if the card is still in hand
+    ASSERT_EQUAL(alice->play_card(Card(ACE, SPADES), SPADES), Card(ACE, SPADES));
+
+    delete alice;
+}
+
+// Test playing a card when unable to follow suit
+TEST(test_simple_player_play_card_unable_to_follow_suit) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Add cards that do not match the led suit
+    alice->add_card(Card(ACE, SPADES)); // Trump
+    alice->add_card(Card(KING, SPADES)); // Trump
+    alice->add_card(Card(QUEEN, SPADES)); // Trump
+    alice->add_card(Card(JACK, SPADES)); // Trump
+    alice->add_card(Card(TEN, DIAMONDS)); // Non-trump
+
+    Card led_card(KING, HEARTS); // Leading hearts
+    Card played_card = alice->play_card(led_card, SPADES); // Trump is spades
+    ASSERT_EQUAL(played_card, Card(TEN, DIAMONDS)); // Player must play the lowest card since they can't follow suit
+
+    delete alice;
+}
+
+
 TEST_MAIN()
