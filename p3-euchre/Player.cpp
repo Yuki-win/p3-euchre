@@ -86,10 +86,13 @@ public:
 }
 
     void add_and_discard(const Card &upcard) override {
-        hand.push_back(upcard);
+    hand.push_back(upcard);
+    if (hand.size() > 1) {
         auto it = std::min_element(hand.begin(), hand.end());
-        hand.erase(it);  // Discard the lowest card
+        hand.erase(it);  // Discard the lowest card only if hand has more than one card
     }
+}
+
 
     void add_card(const Card &card) override {
         hand.push_back(card);
@@ -97,10 +100,11 @@ public:
     }
 
     void print_hand() const {
-        for (size_t i = 0; i < hand.size(); ++i) {
-            cout << "[" << i << "] " << hand[i] << "\n";
-        }
+    assert(!hand.empty());  // 确保手牌不为空
+    for (size_t i = 0; i < hand.size(); ++i) {
+        cout << "[" << i << "] " << hand[i] << "\n";
     }
+}
 
 private:
     std::string name;
