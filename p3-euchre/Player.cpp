@@ -26,7 +26,7 @@ public:
             }
         } else if (round == 2) {
             Suit next_suit = Suit_next(upcard.get_suit());
-            if (count_trump_cards(next_suit) >= 1) {
+            if (count_trump_cards(next_suit) >= 1 || is_dealer) {  // 修改以确保dealer选择trump
                 order_up_suit = next_suit;
                 return true;
             }
@@ -35,7 +35,6 @@ public:
         return false;
     }
 
-    // 改进后的 lead_card() 方法
     Card lead_card(Suit trump) override {
         // 找到最高的非王牌
         auto it = std::max_element(hand.begin(), hand.end(),
@@ -49,7 +48,7 @@ public:
             });
 
         // 如果有非王牌，则出最高的非王牌
-        if (!it->is_trump(trump)) {
+        if (it != hand.end() && !it->is_trump(trump)) {
             Card to_play = *it;
             hand.erase(it);
             return to_play;
@@ -59,52 +58,45 @@ public:
         return play_highest_trump(trump);
     }
 
-    
-     Card play_card(const Card &led_card, Suit trump) override {
-    Suit led_suit = led_card.get_suit(trump);
+    Card play_card(const Card &led_card, Suit trump) override {
+        Suit led_suit = led_card.get_suit(trump);
 
-    // 找到最高的 led suit 牌
-    auto it = std::max_element(hand.begin(), hand.end(),
-        [led_suit, trump](const Card &a, const Card &b) {
-            // 只比较属于 led_suit 的卡牌
-            if (a.get_suit(trump) == led_suit && b.get_suit(trump) == led_suit) {
-                return a < b;  // 比较相同花色的牌
-            }
-            // 忽略不同花色的卡牌
-            return false;  
-        });
+        // 找到最高的 led suit 牌
+        auto it = std::max_element(hand.begin(), hand.end(),
+            [led_suit, trump](const Card &a, const Card &b) {
+                // 只比较属于 led_suit 的卡牌
+                if (a.get_suit(trump) == led_suit && b.get_suit(trump) == led_suit) {
+                    return a < b;  // 比较相同花色的牌
+                }
+                // 忽略不同花色的卡牌
+                return false;  
+            });
 
-    // 如果有 led suit 牌，出最高的那张
-    if (it != hand.end() && it->get_suit(trump) == led_suit) {
-        Card to_play = *it;
-        hand.erase(it);
-        return to_play;
+        // 如果有 led suit 牌，出最高的那张
+        if (it != hand.end() && it->get_suit(trump) == led_suit) {
+            Card to_play = *it;
+            hand.erase(it);
+            return to_play;
+        }
+
+        // 否则出最小的牌
+        return play_lowest_card();
     }
-
-    // 否则出最小的牌
-    return play_lowest_card();
-}
 
     void add_and_discard(const Card &upcard) override {
-    hand.push_back(upcard);
-    if (hand.size() > 1) {
-        auto it = std::min_element(hand.begin(), hand.end());
-        hand.erase(it);  // Discard the lowest card only if hand has more than one card
-    }
-}
+        hand.push_back(upcard);
 
+        // 如果手牌数量大于 5 张，丢弃最小的
+        if (hand.size() > 5) {
+            auto it = std::min_element(hand.begin(), hand.end());
+            hand.erase(it);
+        }
+    }
 
     void add_card(const Card &card) override {
         hand.push_back(card);
         sort(hand.begin(), hand.end());
     }
-
-    void print_hand() const {
-    assert(!hand.empty());  // 确保手牌不为空
-    for (size_t i = 0; i < hand.size(); ++i) {
-        cout << "[" << i << "] " << hand[i] << "\n";
-    }
-}
 
 private:
     std::string name;
