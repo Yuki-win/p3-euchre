@@ -566,6 +566,7 @@ TEST(test_simple_player_add_and_discard_full_hand) {
     alice->add_and_discard(Card(NINE, SPADES));  // New card: Nine of Spades
 
     // The lowest card (Jack of Clubs) should be discarded
+    ASSERT_EQUAL(alice->play_card(Card(JACK, CLUBS), SPADES), Card(JACK, CLUBS));
     ASSERT_EQUAL(alice->play_card(Card(QUEEN, HEARTS), SPADES), Card(QUEEN, HEARTS));
     ASSERT_EQUAL(alice->play_card(Card(KING, DIAMONDS), SPADES), Card(KING, DIAMONDS));
     ASSERT_EQUAL(alice->play_card(Card(ACE, CLUBS), SPADES), Card(ACE, CLUBS));
