@@ -572,4 +572,56 @@ TEST(test_simple_player_add_and_discard_full_hand) {
 
     delete alice;
 }
+
+// New: Test SimplePlayer make_trump when player is dealer in round 2
+TEST(test_simple_player_make_trump_dealer_round_2) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Add a non-trump card from the next suit (next suit should become trump in round 2)
+    alice->add_card(Card(ACE, DIAMONDS));  // Diamonds is next suit if Hearts is trump
+
+    // Test make_trump when player is the dealer in round 2
+    Card upcard(QUEEN, HEARTS);  // Hearts is proposed as trump
+    Suit order_up_suit;
+    ASSERT_TRUE(alice->make_trump(upcard, true, 2, order_up_suit));  // As dealer, should pick Diamonds
+
+    ASSERT_EQUAL(order_up_suit, DIAMONDS);  // Dealer should choose next suit
+
+    delete alice;
+}
+
+// New: Test SimplePlayer play_highest_trump with only trump cards
+TEST(test_simple_player_play_highest_trump) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Add all trump cards
+    alice->add_card(Card(ACE, SPADES));
+    alice->add_card(Card(KING, SPADES));
+    alice->add_card(Card(QUEEN, SPADES));
+
+    // Test lead_card to ensure highest trump is played
+    Card lead = alice->lead_card(SPADES);  // Trump is Spades
+    ASSERT_EQUAL(lead, Card(ACE, SPADES));  // Should lead the highest trump (Ace of Spades)
+
+    delete alice;
+}
+
+// New: Test SimplePlayer play_lowest_card when no trump
+TEST(test_simple_player_play_lowest_card) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Add non-trump cards only
+    alice->add_card(Card(ACE, CLUBS));
+    alice->add_card(Card(KING, DIAMONDS));
+    alice->add_card(Card(QUEEN, HEARTS));
+
+    // Test play_card to ensure lowest card is played when no trump
+    Card led_card(KING, SPADES);  // Trump is Spades, but no trump cards in hand
+    Card played = alice->play_card(led_card, SPADES);  // Should play lowest card (Queen of Hearts)
+
+    ASSERT_EQUAL(played, Card(QUEEN, HEARTS));
+
+    delete alice;
+}
+
 TEST_MAIN()
