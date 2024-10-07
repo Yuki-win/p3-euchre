@@ -363,39 +363,7 @@ TEST(test_simple_player_make_trump_with_bowers) {
 }
 
 
-// Test adding cards to the player's hand
-TEST(test_simple_player_add_card) {
-    Player *alice = Player_factory("Alice", "Simple");
 
-    // Add cards in a non-sorted order
-    alice->add_card(Card(QUEEN, HEARTS));
-    alice->add_card(Card(ACE, SPADES));
-    alice->add_card(Card(KING, DIAMONDS));
-
-    // Check if the cards are sorted correctly
-    // The expected order should be: King of Diamonds, Queen of Hearts, Ace of Spades
-    ASSERT_EQUAL(alice->play_card(Card(QUEEN, HEARTS), SPADES), Card(QUEEN, HEARTS));
-    ASSERT_EQUAL(alice->play_card(Card(ACE, SPADES), SPADES), Card(ACE, SPADES));
-    ASSERT_EQUAL(alice->play_card(Card(KING, DIAMONDS), SPADES), Card(KING, DIAMONDS));
-
-    delete alice;
-}
-
-// Test adding and discarding cards
-TEST(test_simple_player_add_and_discard) {
-    Player *alice = Player_factory("Alice", "Simple");
-
-    // Add cards to the player's hand
-    alice->add_and_discard(Card(QUEEN, HEARTS)); // Discard the lowest card
-    alice->add_and_discard(Card(ACE, SPADES));   // Discard the lowest card
-    alice->add_and_discard(Card(KING, DIAMONDS)); // Discard the lowest card
-
-    // Check the remaining cards in hand
-    // The player should have only the highest card left
-    ASSERT_EQUAL(alice->play_card(Card(QUEEN, HEARTS), SPADES), Card(KING, DIAMONDS));
-
-    delete alice;
-}
 
 // Test SimplePlayer making trump when there are no trump cards
 TEST(test_simple_player_no_trump_cards) {
@@ -461,7 +429,147 @@ TEST(test_simple_player_play_card_unable_to_follow_suit) {
     delete alice;
 }
 
+// New: Test SimplePlayer making trump with no cards (empty hand case)
+TEST(test_simple_player_make_trump_empty_hand) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Test making trump with no cards in hand
+    Card upcard(QUEEN, SPADES);  // Spades is proposed as trump
+    Suit order_up_suit;
+    ASSERT_FALSE(alice->make_trump(upcard, false, 1, order_up_suit));  // Should pass due to empty hand
+
+    delete alice;
+}
+
+// New: Test SimplePlayer with a full hand of non-trump cards in round 1
+TEST(test_simple_player_pass_trump_full_non_trump_hand) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Simulate a hand with no trump cards
+    Card nine_clubs(NINE, CLUBS);
+    Card ten_diamonds(TEN, DIAMONDS);
+    Card jack_hearts(JACK, HEARTS);
+    Card seven_clubs(SEVEN, CLUBS);
+    alice->add_card(nine_clubs);
+    alice->add_card(ten_diamonds);
+    alice->add_card(jack_hearts);
+    alice->add_card(seven_clubs);
+
+    // Test passing on making trump
+    Card upcard(QUEEN, SPADES);  // Spades is proposed as trump
+    Suit order_up_suit;
+    ASSERT_FALSE(alice->make_trump(upcard, false, 1, order_up_suit));  // Should pass
+
+    delete alice;
+}
+
+
+TEST(test_pass_trump_no_trump_cards) {
+    Player *player = Player_factory("Player2", "Simple");
+
+    // Player has no trump cards
+    player->add_card(Card(NINE, HEARTS));
+    player->add_card(Card(ACE, CLUBS));
+
+    // Upcard and trump
+    Card upcard(QUEEN, SPADES);
+    Suit order_up_suit;
+
+    // Player should pass on trump
+    ASSERT_FALSE(player->make_trump(upcard, false, 1, order_up_suit));
+
+    delete player;
+}
+TEST(test_right_bower_wins_trick) {
+    Player *player1 = Player_factory("Player1", "Simple");
+    Player *player2 = Player_factory("Player2", "Simple");
+
+    // Add cards
+    player1->add_card(Card(JACK, SPADES));  // Right bower
+    player2->add_card(Card(ACE, HEARTS));
+
+    // Led suit is Hearts, but Spades is trump
+    Card led_card(ACE, HEARTS);
+    Card played_card = player1->play_card(led_card, SPADES);  // Spades is trump
+
+    ASSERT_EQUAL(played_card, Card(JACK, SPADES));  // Right bower should be played
+
+    delete player1;
+    delete player2;
+}
+TEST(test_follow_led_suit) {
+    Player *player = Player_factory("Player3", "Simple");
+
+    // Add cards
+    player->add_card(Card(NINE, DIAMONDS));
+    player->add_card(Card(ACE, SPADES));  // Trump card
+
+    // Led suit is Diamonds
+    Card led_card(TEN, DIAMONDS);
+    Card played_card = player->play_card(led_card, SPADES);  // Trump is Spades
+
+    ASSERT_EQUAL(played_card, Card(NINE, DIAMONDS));  // Should follow led suit
+
+    delete player;
+}
+
+// New: Test SimplePlayer play_card with all trump cards
+TEST(test_simple_player_play_card_all_trump) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Add all trump cards
+    alice->add_card(Card(ACE, SPADES));
+    alice->add_card(Card(KING, SPADES));
+    alice->add_card(Card(QUEEN, SPADES));
+    alice->add_card(Card(JACK, SPADES));
+
+    // Test playing card when trump suit is led
+    Card led_card(KING, HEARTS);  // Leading Hearts, but all cards are trump (Spades)
+    Card played_card = alice->play_card(led_card, SPADES);  // Trump is Spades
+
+    ASSERT_EQUAL(played_card, Card(JACK, SPADES));  // Should play the lowest trump card (Jack of Spades)
+
+    delete alice;
+}
 
 
 
+// New: Test SimplePlayer lead_card with all trump cards
+TEST(test_simple_player_lead_card_all_trump) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Add all trump cards
+    alice->add_card(Card(ACE, SPADES));
+    alice->add_card(Card(KING, SPADES));
+    alice->add_card(Card(QUEEN, SPADES));
+    alice->add_card(Card(JACK, SPADES));
+
+    // Test leading a card when all cards are trump (Spades)
+    Card lead = alice->lead_card(SPADES);  // Trump is Spades
+
+    ASSERT_EQUAL(lead, Card(JACK, SPADES));  // Should lead the lowest trump card (Jack of Spades)
+
+    delete alice;
+}
+
+// New: Test SimplePlayer add_and_discard with full hand
+TEST(test_simple_player_add_and_discard_full_hand) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Fill the hand with cards
+    alice->add_card(Card(ACE, CLUBS));
+    alice->add_card(Card(KING, DIAMONDS));
+    alice->add_card(Card(QUEEN, HEARTS));
+    alice->add_card(Card(JACK, CLUBS));
+
+    // Now add a new card and discard the lowest card
+    alice->add_and_discard(Card(NINE, SPADES));  // New card: Nine of Spades
+
+    // The lowest card (Jack of Clubs) should be discarded
+    ASSERT_EQUAL(alice->play_card(Card(QUEEN, HEARTS), SPADES), Card(QUEEN, HEARTS));
+    ASSERT_EQUAL(alice->play_card(Card(KING, DIAMONDS), SPADES), Card(KING, DIAMONDS));
+    ASSERT_EQUAL(alice->play_card(Card(ACE, CLUBS), SPADES), Card(ACE, CLUBS));
+
+    delete alice;
+}
 TEST_MAIN()
