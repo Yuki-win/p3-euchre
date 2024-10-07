@@ -288,4 +288,13 @@ TEST(test_card_get_suit_edge_cases) {
     ASSERT_EQUAL(normal_card.get_suit(SPADES), HEARTS); // Should return normal suit
 }
 
+
+// 测试每种花色的下一个花色
+TEST(test_suit_next) {
+    ASSERT_EQUAL(CLUBS, Suit_next(SPADES));    // SPADES -> CLUBS
+    ASSERT_EQUAL(SPADES, Suit_next(CLUBS));     // CLUBS -> SPADES
+    ASSERT_EQUAL(DIAMONDS, Suit_next(HEARTS));  // HEARTS -> DIAMONDS
+    ASSERT_EQUAL(HEARTS, Suit_next(DIAMONDS));   // DIAMONDS -> HEARTS
+}
+
 TEST_MAIN()
