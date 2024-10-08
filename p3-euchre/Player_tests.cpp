@@ -625,4 +625,156 @@ TEST(test_simple_player_play_lowest_card) {
     delete alice;
 }
 
+
+
+// new 10.7 9:12 update
+
+// New: 111
+TEST(test_simple_player_add_and_discard_full_hand) {
+    Player *alice = Player_factory("Alice", "Simple");
+
+    // Fill the hand with cards
+    alice->add_card(Card(ACE, DIAMONDS));
+    alice->add_card(Card(KING, DIAMONDS));
+    alice->add_card(Card(QUEEN, DIAMONDS));
+    alice->add_card(Card(JACK, DIAMONDS));
+    alice->add_card(Card(TEN, DIAMONDS));
+
+    // Now add a new card and discard the lowest card
+    alice->add_and_discard(Card(NINE,SPADES));  // New card: Nine of Spades
+
+    // The lowest card (Jack of Clubs) should be discarded
+    ASSERT_EQUAL(alice->play_card(Card(ACE, DIAMONDS), DIAMONDS), Card(ACE, DIAMONDS));
+    ASSERT_EQUAL(alice->play_card(Card(KING,DIAMONDS), DIAMONDS), Card(KING, DIAMONDS));
+    ASSERT_EQUAL(alice->play_card(Card(QUEEN, DIAMONDS), DIAMONDS), Card(QUEEN, DIAMONDS));
+    ASSERT_EQUAL(alice->play_card(Card(JACK, DIAMONDS), DIAMONDS), Card(JACK, DIAMONDS));
+    ASSERT_EQUAL(alice->play_card(Card(TEN, DIAMONDS), DIAMONDS), Card(TEN, DIAMONDS));
+
+    delete alice;
+}
+
+// Test SimplePlayer making trump in round 1 with two high trump cards
+TEST(test_simple_player_first_round_orders_trump) {
+    Player *simple_player = Player_factory("Alice", "Simple");
+
+    // Simulate a hand with two high trump cards
+    simple_player->add_card(Card(JACK, HEARTS));
+    simple_player->add_card(Card(QUEEN, HEARTS));
+    simple_player->add_card(Card(NINE, CLUBS));
+
+    // Test making trump with Hearts as upcard in round 1
+    Card upcard(NINE, HEARTS);  // Hearts is proposed as trump
+    Suit order_up_suit;
+    bool ordered = simple_player->make_trump(upcard, false, 1, order_up_suit);
+
+    // Expect the player to order up Hearts
+    ASSERT_TRUE(ordered);
+    ASSERT_EQUAL(HEARTS, order_up_suit);
+
+    delete simple_player;
+}
+
+// Test SimplePlayer passing on trump in round 1 without enough trump cards
+TEST(test_simple_player_first_round_passes_trump) {
+    Player *simple_player = Player_factory("Alice", "Simple");
+
+    // Simulate a hand without enough trump cards
+    simple_player->add_card(Card(NINE, DIAMONDS));
+    simple_player->add_card(Card(TEN, CLUBS));
+    simple_player->add_card(Card(JACK, SPADES));
+
+    // Test passing on making trump with Hearts as upcard in round 1
+    Card upcard(NINE, HEARTS);
+    Suit order_up_suit;
+    bool ordered = simple_player->make_trump(upcard, false, 1, order_up_suit);
+
+    // Expect the player to pass
+    ASSERT_FALSE(ordered);
+
+    delete simple_player;
+}
+
+// Test SimplePlayer making trump in round 2 by choosing the next suit (same color)
+TEST(test_simple_player_second_round_orders_same_color_trump) {
+    Player *simple_player = Player_factory("Alice", "Simple");
+
+    // Simulate a hand with a card from the next suit (same color)
+    simple_player->add_card(Card(KING, DIAMONDS));
+    simple_player->add_card(Card(QUEEN, SPADES));
+    simple_player->add_card(Card(TEN, HEARTS));
+
+    // Test making trump with Diamonds (next suit) in round 2
+    Card upcard(NINE, HEARTS);  // Hearts is proposed as trump
+    Suit order_up_suit;
+    bool ordered = simple_player->make_trump(upcard, false, 2, order_up_suit);
+
+    // Expect the player to order up Diamonds (same color as Hearts)
+    ASSERT_TRUE(ordered);
+    ASSERT_EQUAL(DIAMONDS, order_up_suit);
+
+    delete simple_player;
+}
+
+// Test SimplePlayer passing in round 2 without enough high cards in the next suit (special)
+TEST(test_simple_player_second_round_passes_no_high_cards) {
+    Player *simple_player = Player_factory("Alice", "Simple");
+
+    // Simulate a hand without high cards in the next suit
+    simple_player->add_card(Card(NINE, CLUBS));
+    simple_player->add_card(Card(TEN, SPADES));
+    simple_player->add_card(Card(JACK, DIAMONDS));
+
+    // Test passing on making trump in round 2
+    Card upcard(NINE, HEARTS);
+    Suit order_up_suit;
+    bool ordered = simple_player->make_trump(upcard, false, 2, order_up_suit);
+
+    // Expect the player to pass
+    ASSERT_EQUAL(ordered,false);
+
+    delete simple_player;
+}
+
+// Test SimplePlayer as the dealer in round 2 (Screw the Dealer rule)
+TEST(test_simple_player_screw_the_dealer_forced_trump) {
+    Player *simple_player = Player_factory("Alice", "Simple");
+
+    // Simulate a hand where the dealer is forced to order trump
+    simple_player->add_card(Card(NINE, CLUBS));
+    simple_player->add_card(Card(TEN, SPADES));
+    simple_player->add_card(Card(JACK, DIAMONDS));
+
+    // Test the dealer being forced to make trump in round 2
+    Card upcard(NINE, HEARTS);  // Hearts is proposed as trump
+    Suit order_up_suit;
+    bool ordered = simple_player->make_trump(upcard, true, 2, order_up_suit);
+
+    // Expect the dealer to order Diamonds as trump (next suit)
+    ASSERT_TRUE(ordered);
+    ASSERT_EQUAL(DIAMONDS, order_up_suit);
+
+    delete simple_player;
+}
+
+// Test SimplePlayer in round 1 with only one trump card
+TEST(test_simple_player_first_round_one_trump_pass) {
+    Player *simple_player = Player_factory("Alice", "Simple");
+
+    // Simulate a hand with only one trump card
+    simple_player->add_card(Card(QUEEN, HEARTS));
+    simple_player->add_card(Card(TEN, CLUBS));
+    simple_player->add_card(Card(JACK, SPADES));
+
+    // Test passing on making trump in round 1
+    Card upcard(NINE, HEARTS);  // Hearts is proposed as trump
+    Suit order_up_suit;
+    bool ordered = simple_player->make_trump(upcard, false, 1, order_up_suit);
+
+    // Expect the player to pass
+    ASSERT_EQUAL(ordered, false);
+
+    delete simple_player;
+}
+
+
 TEST_MAIN()
