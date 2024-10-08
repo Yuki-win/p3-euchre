@@ -8,9 +8,12 @@
 using namespace std;
 
 ////////////////// Simple Player Implementation ////////////////
-
 class SimplePlayer : public Player {
 public:
+    const std::vector<Card>& get_hand() const {
+        return hand;
+    }
+
     SimplePlayer(const std::string& name_in) : name(name_in) {}
 
     const std::string &get_name() const override {
@@ -26,35 +29,32 @@ public:
             }
         } else if (round == 2) {
             Suit next_suit = Suit_next(upcard.get_suit());
-            if (count_trump_cards(next_suit) >= 1 || is_dealer) {  // 修改以确保dealer选择trump
+            if (count_trump_cards(next_suit) >= 1 || is_dealer) {
                 order_up_suit = next_suit;
                 return true;
             }
         }
-
         return false;
     }
 
     Card lead_card(Suit trump) override {
-        // 找到最高的非王牌
+        // 找到最高的非主牌
         auto it = std::max_element(hand.begin(), hand.end(),
             [trump](const Card &a, const Card &b) {
-                // 比较不是王牌的牌
                 if (!a.is_trump(trump) && !b.is_trump(trump)) {
-                    return a < b;  // 比较非王牌
+                    return a < b;  // 比较非主牌
                 }
-                // 如果其中一张是王牌，另一张不是，则非王牌"更小"
-                return a.is_trump(trump);
+                return a.is_trump(trump) && !b.is_trump(trump); // 让主牌比非主牌"大"
             });
 
-        // 如果有非王牌，则出最高的非王牌
+        // 如果有非主牌，则出最高的非主牌
         if (it != hand.end() && !it->is_trump(trump)) {
-            Card to_play = *it;
-            hand.erase(it);
-            return to_play;
+            Card to_play = *it; // 选择要出的牌
+            hand.erase(it); // 从手牌中删除
+            return to_play; // 返回出的牌
         }
 
-        // 否则出最高的王牌
+        // 否则出最高的主牌
         return play_highest_trump(trump);
     }
 
@@ -64,11 +64,9 @@ public:
         // 找到最高的 led suit 牌
         auto it = std::max_element(hand.begin(), hand.end(),
             [led_suit, trump](const Card &a, const Card &b) {
-                // 只比较属于 led_suit 的卡牌
                 if (a.get_suit(trump) == led_suit && b.get_suit(trump) == led_suit) {
                     return a < b;  // 比较相同花色的牌
                 }
-                // 忽略不同花色的卡牌
                 return false;  
             });
 
@@ -84,18 +82,18 @@ public:
     }
 
     void add_and_discard(const Card &upcard) override {
-        hand.push_back(upcard);
+        hand.push_back(upcard); // 添加 upcard 到手牌
 
-        // 如果手牌数量大于 5 张，丢弃最小的
+        // 丢弃最小的牌，如果手牌超过 5 张
         if (hand.size() > 5) {
-            auto it = std::min_element(hand.begin(), hand.end());
-            hand.erase(it);
+            auto it = std::min_element(hand.begin(), hand.end()); // 找到最小的牌
+            hand.erase(it); // 删除最小的牌
         }
     }
 
     void add_card(const Card &card) override {
         hand.push_back(card);
-        sort(hand.begin(), hand.end());
+        std::sort(hand.begin(), hand.end()); // 确保手牌有序
     }
 
 private:
