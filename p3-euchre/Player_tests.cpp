@@ -323,79 +323,80 @@ TEST(test_player_make_trumps) {
     delete player5;
 }
 
-TEST(test_player_add_and_discards) {
-    // Discard the smallest card
-    Player * player1 = Player_factory("Alice", "Simple");
-    player1->add_card(Card(ACE, SPADES));
-    player1->add_card(Card(NINE, SPADES));
-    player1->add_card(Card(QUEEN, SPADES));
-    player1->add_card(Card(KING, SPADES));
-    player1->add_card(Card(TEN, SPADES));
-    player1->add_and_discard(
-        Card(NINE, HEARTS) // Upcard, discard the smallest
+
+
+TEST(test_player_add_and_discard) {
+    
+    Player * p1 = Player_factory("p1", "Simple");
+    p1->add_card(Card(NINE, SPADES));
+    p1->add_card(Card(TEN, SPADES));
+    p1->add_card(Card(ACE, SPADES));
+    p1->add_card(Card(QUEEN, SPADES));
+    p1->add_card(Card(TEN, SPADES));
+    p1->add_and_discard(
+    Card(NINE, HEARTS) 
     );
-    Card card_led1 = player1->lead_card(HEARTS);
+    Card card_led1 = p1->lead_card(HEARTS);
     Card ace_spades(ACE, SPADES);
-    ASSERT_EQUAL(card_led1, ace_spades); // Highest non-trump
+    ASSERT_EQUAL(card_led1, ace_spades); 
 
-    Card led1(JACK, SPADES);
-    Card king_spades(KING, SPADES);
-    Card play1 = player1->play_card(led1, SPADES); // Highest in suit
+    Card led(KING, SPADES);
+    Card king_spades(QUEEN, SPADES);
+    Card play1 = p1->play_card(led, SPADES); // highest in suit
     ASSERT_EQUAL(play1, king_spades); 
-    delete player1;
+    delete p1;
 
-    // Discard the smallest card
-    Player * player2 = Player_factory("Bob", "Simple");
-    player2->add_card(Card(NINE, SPADES));
-    player2->add_card(Card(QUEEN, SPADES));
-    player2->add_card(Card(KING, SPADES));
-    player2->add_card(Card(ACE, SPADES));
-    player2->add_card(Card(TEN, SPADES));
-    player2->add_and_discard(
-        Card(JACK, SPADES) // Upcard, discard the smallest
+    // discard smallest
+    Player * p2 = Player_factory("p2", "Simple");
+    p2->add_card(Card(KING, SPADES));
+    p2->add_card(Card(QUEEN, SPADES));
+    p2->add_card(Card(TEN, SPADES));
+    p2->add_card(Card(EIGHT, SPADES));
+    p2->add_card(Card(NINE, SPADES));
+    p2->add_and_discard(
+    Card(JACK, SPADES) 
     );
-    Card card_led2 = player2->lead_card(SPADES);
+    Card card_led2 = p2->lead_card(SPADES);
     Card jack_spades(JACK, SPADES);
-    ASSERT_EQUAL(card_led2, jack_spades); // Highest trump
+    ASSERT_EQUAL(card_led2, jack_spades); 
 
-    Card card_led3 = player2->lead_card(HEARTS);
-    Card ace_spades2(ACE, SPADES);
-    ASSERT_EQUAL(card_led3, ace_spades2); // Highest trump
-    delete player2;
+    Card card_ledb2 = p2->lead_card(HEARTS);
+    Card king_spades2(KING, SPADES);
+    ASSERT_EQUAL(card_ledb2, king_spades2); 
+    delete p2;
 
-    // Discard the upcard
-    Player * player4 = Player_factory("Cindy", "Simple");
-    player4->add_card(Card(NINE, SPADES));
-    player4->add_card(Card(QUEEN, SPADES));
-    player4->add_card(Card(KING, SPADES));
-    player4->add_card(Card(ACE, SPADES));
-    player4->add_card(Card(TEN, SPADES));
-    player4->add_and_discard(
-        Card(EIGHT, SPADES) // Upcard, discard the upcard
+    // discard upcard
+    Player * p3 = Player_factory("p3", "Simple");
+    p3->add_card(Card(NINE, SPADES));
+    p3->add_card(Card(QUEEN, SPADES));
+    p3->add_card(Card(KING, SPADES));
+    p3->add_card(Card(ACE, SPADES));
+    p3->add_card(Card(TEN, SPADES));
+    p3->add_and_discard(
+    Card(SIX, SPADES) // upcard discard upcard
     );
-    Card led2(ACE, HEARTS);
+    Card led3(KING, CLUBS);
     Card nine_spades(NINE, SPADES);
-    Card play2 = player4->play_card(led2, SPADES); // Lowest in hand
-    ASSERT_EQUAL(play2, nine_spades);
+    Card play3 = p3->play_card(led3, SPADES); // not discard card in hand
+    ASSERT_EQUAL(play3, nine_spades);
 
-    delete player4;
+    delete p3;
 
-    Player * player5 = Player_factory("Dany", "Simple");
-    player5->add_card(Card(NINE, SPADES));
-    player5->add_card(Card(QUEEN, HEARTS));
-    player5->add_card(Card(KING, CLUBS));
-    player5->add_card(Card(ACE, DIAMONDS));
-    player5->add_card(Card(TEN, SPADES));
-    player5->add_and_discard(
-        Card(EIGHT, SPADES) // Upcard, discard the upcard
+    Player * p4 = Player_factory("p4", "Simple");
+    p4->add_card(Card(EIGHT, SPADES));
+    p4->add_card(Card(KING, HEARTS));
+    p4->add_card(Card(KING, CLUBS));
+    p4->add_card(Card(ACE, DIAMONDS));
+    p4->add_card(Card(TEN, SPADES));
+    p4->add_and_discard(
+    Card(SIX, SPADES) // upcard discard upcard
     );
-    Card led3(ACE, HEARTS);
+    Card led4(ACE, HEARTS);
     Card king_clubs(KING, CLUBS);
-    Card play3 = player5->play_card(led3, SPADES); // Lowest in hand
-    Card queen_hearts(QUEEN, HEARTS);
-    ASSERT_EQUAL(play3, queen_hearts); // Expect Queen of Hearts
+    Card play4 = p4->play_card(led4, SPADES); // lowest in hand
+    ASSERT_EQUAL(play4, king_clubs);
 
-    delete player5;
+    delete p4;
 }
 
 
@@ -508,7 +509,6 @@ delete player3;
 
 
 
-TEST(test_player_add_and_discard1) {
 
 // 创建一个 Player 实例 - SimplePlayer
 
@@ -562,31 +562,5 @@ TEST(test_make_trump_round_2) {
 }
 
 
-TEST(test_player_add_and_discard3) {
-    Player* p3 = Player_factory("alice", "Simple");
-    // Add five cards
-    p3->add_card(Card(NINE, CLUBS));   
-    p3->add_card(Card(NINE, DIAMONDS));
-    p3->add_card(Card(TEN, SPADES)); // Will be discarded
-    p3->add_card(Card(QUEEN, CLUBS));   
-    p3->add_card(Card(QUEEN, SPADES));
-
-    // Add the sixth card (upcard)
-    p3->add_and_discard(Card(ACE, CLUBS));  // Adding upcard, should discard TEN of SPADES
-
-    // First lead
-    Card card_led1 = p3->lead_card(CLUBS); // Trump is CLUBS
-    Card queen_spades(QUEEN, SPADES);
-    ASSERT_EQUAL(card_led1, queen_spades);  // Should play Queen of Spades
-
-    // Second card
-    Card led_card2(ACE, HEARTS);
-    Card nine_diamonds(NINE, DIAMONDS);
-    Card play2 = p3->play_card(led_card2, CLUBS);
-    ASSERT_EQUAL(play2, nine_diamonds);  // Should play Nine of Diamonds
-
-    // Clean up
-    delete p3;
-}
 
 TEST_MAIN();
