@@ -246,3 +246,60 @@ std::ostream &operator<<(std::ostream &os, const Player &p) {
     os << p.get_name();
     return os;
 }
+
+
+// new 10.14
+ Card play_card(const Card &led_card, Suit trump) override {
+        assert(hand.size() >= 1);
+        Suit led_suit = led_card.get_suit();
+        vector<Card> led_suit_card;
+        bool have_led = false;
+        std::sort(hand.begin(), hand.end());
+        int min = 0;
+        int max = 0;
+        // check for led suit
+        for (int i = 0; i < hand.size(); i++){
+            if (hand[i].get_suit() == led_suit){
+                have_led = true;
+                if (Card_less(hand[max], hand[i], led_card,trump)){
+                    
+                    max =i;
+                }
+            }
+        }
+        if (have_led){
+        Card led_return = hand[max];
+        hand.erase(hand.begin() + max);
+        return led_return;
+        }
+        
+        // if no led card in hand
+   
+        for (int i = 0; i < hand.size(); i++){
+            if(Card_less(hand[i], hand[min], trump)){
+                min = i;
+            }
+        }
+        Card non_led_return = hand[min];
+        hand.erase((hand.begin() + min));
+        return non_led_return;
+        
+    }
+
+    // Add a card to the hand and discard the lowest card if hand is full
+    void add_and_discard(const Card &upcard) override {
+        hand.push_back(upcard); // Add upcard to hand
+        Suit trump = upcard.get_suit();
+        int min = 0;
+        int size = hand.size();
+
+        for (int i = 1; i < size; ++i){
+            if (Card_less(hand[i], hand[min],trump)){
+                min = i;
+            }
+        }
+        if(hand.size() > MAX_HAND_SIZE){
+            hand.erase(hand.begin() + min);
+        }
+
+    }
