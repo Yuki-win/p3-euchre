@@ -1,90 +1,71 @@
+#include "Pack.hpp"
 #include "Card.hpp"
 #include <array>
-#include <string>
 #include <iostream>
+#include <sstream>
 #include <cassert>
-#include <algorithm>
-#include <random>
-#include <chrono>
-#include "Pack.hpp"
 
 using namespace std;
 
-
-  // EFFECTS: Initializes the Pack to be in the following standard order:
-  //          the cards of the lowest suit arranged from lowest rank to
-  //          highest rank, followed by the cards of the next lowest suit
-  //          in order from lowest to highest rank, and so on. 
-  // NOTE: The standard order is the same as that in pack.in.
-  // NOTE: Do NOT use pack.in in your implementation of this function
-  // NOTE: The pack is initially full, with no cards dealt.
-  Pack::Pack() : next(0) {
-    int index = 0;
-    for (int suit = SPADES; suit <= DIAMONDS; suit++){
-      for (int rank = NINE; rank <= ACE; rank++){
-        cards[index++] = Card(static_cast<Rank>(rank),static_cast<Suit>(suit));
-      }
+// 默认构造函数：初始化牌堆，按照标准顺序创建一副牌
+Pack::Pack() {
+  reset();  // 重置牌堆的下一个索引
+  int num = 0;
+  // 定义花色的顺序数组
+  const Suit suits[] = {SPADES, HEARTS, CLUBS, DIAMONDS};
+  // 定义牌面值的顺序数组
+  const Rank ranks[] = {NINE, TEN, JACK, QUEEN, KING, ACE};
+  // 按照花色和牌面值的顺序创建牌堆
+  for (int s = 0; s < 4; s++) {
+    for (int r = 0; r < 6; r++) {
+      cards[num] = Card(ranks[r], suits[s]);
+      num++;
     }
-
   }
+}
 
-  // REQUIRES: pack_input contains a representation of a Pack in the
-  //           format required by the project specification
-  // MODIFIES: pack_input
-  // EFFECTS: Initializes Pack by reading from pack_input.
-  // NOTE: The pack is initially full, with no cards dealt.
-  Pack::Pack(std::istream& pack_input): next(0){
-    int index = 0;
-    string c_rank;
-    string c_suit;
-    string c_of;
+// 从输入流构造牌堆，从文件中读取牌的顺序
+Pack::Pack(std::istream& pack_input) {
+  reset();  // 重置牌堆的下一个索引
+  for (int num = 0; num < PACK_SIZE; num++) {
+    pack_input >> cards[num];
+  }
+}
 
-    while(pack_input >> c_rank>> c_of >> c_suit){
-      assert(c_of == "of");
+// 发一张牌
+Card Pack::deal_one() {
+  assert(next < PACK_SIZE);  // 确保还有牌可以发
+  return cards[next++];
+}
 
-      Rank rank = string_to_rank(c_rank);
-      Suit suit = string_to_suit(c_suit);
+// 重置牌堆，将 next 设为 0
+void Pack::reset() {
+  next = 0;
+}
 
-      assert(rank >= NINE && rank <= ACE);
-      assert(suit >= SPADES && suit <= DIAMONDS);
-
-       cards[index++] = Card(rank, suit);
-
+// 洗牌函数，按照特定的算法洗牌，共洗 7 次
+void Pack::shuffle() {
+  next = 0;
+  std::array<Card, PACK_SIZE> temp;
+  const size_t half_size = PACK_SIZE / 2;
+  // 进行 7 次洗牌
+  for (size_t shuffle_count = 0; shuffle_count < 7; shuffle_count++) {
+    // 交替放置牌到临时数组
+    // i 从 0 到 half_size - 1（0 到 11）
+    for (size_t i = 0; i < half_size; i++) {
+      temp[2 * i] = cards[half_size + i]; 
+      temp[2 * i + 1] = cards[i];
     }
-    assert(index == PACK_SIZE);
-  }
-
-  // REQUIRES: cards remain in the Pack
-  // EFFECTS: Returns the next card in the pack and increments the next index
-  Card Pack::deal_one(){
-    assert(next < PACK_SIZE);
-    return cards[next++];
-  }
-
-  // EFFECTS: Resets next index to first card in the Pack
-  void Pack::reset(){
-    next = 0;
-    
-  }
-
-  // EFFECTS: Shuffles the Pack and resets the next index. This
-  //          performs an in shuffle seven times. See
-  //          https://en.wikipedia.org/wiki/In_shuffle.
-  void Pack::shuffle(){
-    for (int i = 0; i < 7; i++){
-      // creat a new array to store
-      std::array<Card, PACK_SIZE> shuffled;
-
-      int mid = PACK_SIZE/2;
-      for (int j = 0; j < mid; j++){
-        shuffled[2*j] = cards[j+mid];
-        shuffled[2*j+1] = cards[j];
-      }
-      // copy back
-      std::copy(shuffled.begin(), shuffled.end(), cards.begin());
+    // 将临时数组复制回原牌堆
+    for (size_t i = 0; i < PACK_SIZE; i++) {
+      cards[i] = temp[i];
     }
-    next = 0;
   }
+}
+
+bool Pack::empty() const {
+  return (next == PACK_SIZE);
+}
 
   // EFFECTS: returns true if there are no more cards left in the pack
   bool Pack::empty() const{
