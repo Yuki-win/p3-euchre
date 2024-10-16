@@ -1,507 +1,265 @@
 #include "Player.hpp"
-#include "Card.hpp"
-#include <iostream>
 #include <vector>
-#include <algorithm>
+#include <iostream>
 #include <cassert>
+#include <algorithm>
 
 using namespace std;
 
-////////////////// Simple Player Implementation ////////////////
+/////////////////////// SimplePlayer 类的实现 ///////////////////////
 class SimplePlayer : public Player {
-public:
-    SimplePlayer(const std::string& name_in) : name(name_in) {}
-
-    const std::string &get_name() const override {
-        return name;
-    }
-
-    // Function to decide whether to make trump
-    bool make_trump(const Card &upcard, bool is_dealer, int round, Suit &order_up_suit) const override {
-        int high_trumps = 0;
-        Suit upcard_suit = upcard.get_suit();
-        Suit next_suit = Suit_next(upcard_suit);
-        Suit trump_suit;
-
-        if (round == 1) {
-            trump_suit = upcard_suit;
-        } else {
-            trump_suit = next_suit;
-        }
-
-        // Count the number of high trump cards (Jack or higher)
-        for (const Card& card : hand) {
-            if (card.is_trump(trump_suit)) {
-                if (card.get_rank() == JACK ||
-                    card.get_rank() == ACE ||
-                    card.get_rank() == KING ||
-                    card.get_rank() == QUEEN ||
-                    card.get_rank() == TEN) {
-                    ++high_trumps;
-                }
-            }
-        }
-
-        if (round == 1) {
-            if (high_trumps >= 2) {
-                order_up_suit = trump_suit;
-                return true;
-            }
-        } else {
-            if (high_trumps >= 1) {
-                order_up_suit = trump_suit;
-                return true;
-            }
-            if (is_dealer) {
-                order_up_suit = trump_suit;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Lead a card
-    Card lead_card(Suit trump) override {
-        // Find highest non-trump card
-        auto it = std::max_element(hand.begin(), hand.end(),
-            [trump](const Card &a, const Card &b) {
-                if (!a.is_trump(trump) && !b.is_trump(trump)) {
-                    return a < b;  // Compare non-trump cards
-                }
-                if (!a.is_trump(trump)) {
-                    return false; // a is non-trump, b is trump
-                }
-                if (!b.is_trump(trump)) {
-                    return true;  // b is non-trump, a is trump
-                }
-                return Card_less(a, b, trump); // Both are trump
-            });
-
-        if (it != hand.end() && !it->is_trump(trump)) {
-            // Play highest non-trump card
-            Card to_play = *it;
-            hand.erase(it);
-            return to_play;
-        } else {
-            // Play highest trump card
-            auto it_trump = std::max_element(hand.begin(), hand.end(),
-                [trump](const Card &a, const Card &b) {
-                    return Card_less(a, b, trump);
-                });
-            Card to_play = *it_trump;
-            hand.erase(it_trump);
-            return to_play;
-        }
-    }
-
-    // Play a card
-    Card play_card(const Card &led_card, Suit trump) override {
-        Suit led_suit = led_card.get_suit(trump);
-
-        // Collect cards that follow suit
-        std::vector<Card> follow_suit_cards;
-        for (const Card& card : hand) {
-            if (card.get_suit(trump) == led_suit) {
-                follow_suit_cards.push_back(card);
-            }
-        }
-
-        if (!follow_suit_cards.empty()) {
-            // Play highest card in led suit
-            auto it = std::max_element(follow_suit_cards.begin(), follow_suit_cards.end(),
-                [trump](const Card &a, const Card &b) {
-                    return Card_less(a, b, trump);
-                });
-            Card to_play = *it;
-            // Remove from hand
-            auto hand_it = std::find(hand.begin(), hand.end(), to_play);
-            hand.erase(hand_it);
-            return to_play;
-        } else {
-            // Play lowest card
-            return play_lowest_card(trump);
-        }
-    }
-
-    // Add a card to the hand and discard the lowest card if hand is full
-    void add_and_discard(const Card &upcard) override {
-        hand.push_back(upcard); // Add upcard to hand
-
-        // If there are more than 5 cards, find and discard the lowest card
-        if (hand.size() > MAX_HAND_SIZE) {
-            // Find the lowest card in hand to discard
-            auto it = std::min_element(hand.begin(), hand.end(),
-                [](const Card &a, const Card &b) {
-                    return a < b;
-                });
-            // If the upcard is the lowest, discard it
-            if (*it == upcard) {
-                hand.pop_back(); // Discard upcard
-            } else {
-                hand.erase(it);  // Discard the lowest card
-            }
-        }
-    }
-
-    // Add a card to the player's hand
-    void add_card(const Card &card) override {
-        hand.push_back(card);
-        std::sort(hand.begin(), hand.end());  // Ensure hand is sorted
-    }
-
 private:
-    static const int MAX_HAND_SIZE = 5;
-    std::string name;
-    std::vector<Card> hand;
+  std::string name;            // 玩家姓名
+  std::vector<Card> hand;      // 玩家手牌
 
-    // Helper function to play the lowest card
-    Card play_lowest_card(Suit trump) {
-        auto it = std::min_element(hand.begin(), hand.end(),
-            [trump](const Card &a, const Card &b) {
-                return Card_less(a, b, trump);
-            });
-        Card to_play = *it;
-        hand.erase(it);
-        return to_play;
+public:
+  // 构造函数，使用给定的姓名初始化玩家
+  SimplePlayer(const std::string& name_in) : name(name_in) {}
+
+  // 返回玩家的姓名
+  const std::string& get_name() const override {
+    return name;
+  }
+
+  // 向玩家手牌中添加一张牌
+  void add_card(const Card& c) override {
+    assert(hand.size() < MAX_HAND_SIZE);
+    hand.push_back(c);
+  }
+
+  // 玩家决定是否叫主
+  bool make_trump(const Card& upcard, bool is_dealer,
+                  int round, Suit& order_up_suit) const override {
+    assert(round == 1 || round == 2);
+    Suit potential_trump;
+    int face_card_count = 0;
+
+    if (round == 1) {
+      potential_trump = upcard.get_suit();
+      // 计算手牌中潜在主花色的高牌数量（JACK 或更高）
+      for (const auto& card : hand) {
+        if (card.is_trump(potential_trump) && card.is_face_or_ace()) {
+          face_card_count++;
+        }
+      }
+      if (face_card_count >= 2) {
+        order_up_suit = potential_trump;
+        return true;
+      }
+    } else if (round == 2) {
+      potential_trump = Suit_next(upcard.get_suit());
+      // 检查手牌中是否有潜在主花色的高牌（JACK 或更高）
+      for (const auto& card : hand) {
+        if (card.is_trump(potential_trump) && card.is_face_or_ace()) {
+          order_up_suit = potential_trump;
+          return true;
+        }
+      }
+      // 如果是庄家，强制叫主
+      if (is_dealer) {
+        order_up_suit = potential_trump;
+        return true;
+      }
     }
+    return false;
+  }
+
+  // 庄家加牌并弃牌
+  void add_and_discard(const Card& upcard) override {
+    assert(hand.size() >= 1);
+    hand.push_back(upcard);  // 将翻开的牌加入手牌
+
+    // 找到手牌中最小的牌
+    auto min_it = hand.begin();
+    for (auto it = hand.begin(); it != hand.end(); ++it) {
+      if (Card_less(*it, *min_it, upcard.get_suit())) {
+        min_it = it;
+      }
+    }
+    // 弃掉最小的牌
+    hand.erase(min_it);
+  }
+
+  // 领先出牌
+  Card lead_card(Suit trump) override {
+    assert(hand.size() >= 1);
+    // 查找非主牌中最大的牌
+    auto max_non_trump_it = hand.end();
+    for (auto it = hand.begin(); it != hand.end(); ++it) {
+      if (!it->is_trump(trump)) {
+        if (max_non_trump_it == hand.end() || Card_less(*max_non_trump_it, *it, trump)) {
+          max_non_trump_it = it;
+        }
+      }
+    }
+    // 如果有非主牌，出最大的非主牌
+    if (max_non_trump_it != hand.end()) {
+      Card lead = *max_non_trump_it;
+      hand.erase(max_non_trump_it);
+      return lead;
+    } else {
+      // 否则，出最大的主牌
+      auto max_trump_it = hand.begin();
+      for (auto it = hand.begin(); it != hand.end(); ++it) {
+        if (Card_less(*max_trump_it, *it, trump)) {
+          max_trump_it = it;
+        }
+      }
+      Card lead = *max_trump_it;
+      hand.erase(max_trump_it);
+      return lead;
+    }
+  }
+
+  // 跟牌
+  Card play_card(const Card& led_card, Suit trump) override {
+    assert(hand.size() >= 1);
+    Suit led_suit = led_card.get_suit(trump);
+    // 查找是否有跟出的花色
+    std::vector<Card>::iterator play_it = hand.end();
+    for (auto it = hand.begin(); it != hand.end(); ++it) {
+      if (it->get_suit(trump) == led_suit) {
+        if (play_it == hand.end() || Card_less(*play_it, *it, led_card, trump)) {
+          play_it = it;
+        }
+      }
+    }
+    // 如果有跟出的花色，出最大的那张
+    if (play_it != hand.end()) {
+      Card play = *play_it;
+      hand.erase(play_it);
+      return play;
+    } else {
+      // 否则，出最小的牌
+      auto min_it = hand.begin();
+      for (auto it = hand.begin() + 1; it != hand.end(); ++it) {
+        if (Card_less(*it, *min_it, led_card, trump)) {
+          min_it = it;
+        }
+      }
+      Card play = *min_it;
+      hand.erase(min_it);
+      return play;
+    }
+  }
+
+  // 析构函数
+  ~SimplePlayer() override = default;
 };
 
-////////////////// Human Player Implementation ////////////////
+/////////////////////// HumanPlayer 类的实现 ///////////////////////
 class HumanPlayer : public Player {
-public:
-    HumanPlayer(const std::string& name_in) : name(name_in) {}
-    const std::string &get_name() const override {
-        return name;
-    }
-    bool make_trump(const Card &upcard, bool is_dealer, int round, Suit &order_up_suit) const override {
-        print_hand();
-        cout << "Human player " << name << ", please enter a suit, or \"pass\":" << endl;
-        std::string decision;
-        cin >> decision;
-        if (decision != "pass") {
-            order_up_suit = string_to_suit(decision);
-            return true;
-        }
-        return false;
-    }
-    Card lead_card(Suit trump) override {
-        print_hand();
-        cout << "Human player " << name << ", please select a card:" << endl;
-        int index;
-        cin >> index;
-        Card to_play = hand[index];
-        hand.erase(hand.begin() + index);
-        return to_play;
-    }
-    Card play_card(const Card &led_card, Suit trump) override {
-        print_hand();
-        cout << "Human player " << name << ", please select a card:" << endl;
-        int index;
-        cin >> index;
-        Card to_play = hand[index];
-        hand.erase(hand.begin() + index);
-        return to_play;
-    }
-    void add_and_discard(const Card &upcard) override {
-        print_hand();
-        cout << "Discard upcard: [-1]" << endl;
-        cout << "Human player " << name << ", please select a card to discard:" << endl;
-        int index;
-        cin >> index;
-        if (index == -1) {
-            // Discard the upcard
-        } else {
-            hand.push_back(upcard);
-            hand.erase(hand.begin() + index);
-        }
-    }
-    void add_card(const Card &card) override {
-        hand.push_back(card);
-        std::sort(hand.begin(), hand.end());
-    }
 private:
-    std::string name;
-    std::vector<Card> hand;
-    void print_hand() const {
-        for (size_t i = 0; i < hand.size(); ++i) {
-            cout << "[" << i << "] " << hand[i] << endl;
-        }
+  std::string name;            // 玩家姓名
+  std::vector<Card> hand;      // 玩家手牌
+
+  // 打印玩家手牌
+  void print_hand() const {
+    for (size_t i = 0; i < hand.size(); ++i) {
+      cout << "Human player " << name << "'s hand: "
+           << "[" << i << "] " << hand[i] << "\n";
     }
+  }
+
+  // 对手牌进行排序
+  void sort_hand() {
+    std::sort(hand.begin(), hand.end());
+  }
+
+public:
+  // 构造函数，使用给定的姓名初始化玩家
+  HumanPlayer(const std::string& name_in) : name(name_in) {}
+
+  // 返回玩家的姓名
+  const std::string& get_name() const override {
+    return name;
+  }
+
+  // 向玩家手牌中添加一张牌
+  void add_card(const Card& c) override {
+    assert(hand.size() < MAX_HAND_SIZE);
+    hand.push_back(c);
+    sort_hand();
+  }
+
+  // 玩家决定是否叫主
+  bool make_trump(const Card& upcard, bool is_dealer,
+                  int round, Suit& order_up_suit) const override {
+    print_hand();
+    cout << "Human player " << name << ", please enter a suit, or \"pass\":\n";
+    std::string decision;
+    std::cin >> decision;
+
+    if (decision != "pass") {
+      order_up_suit = string_to_suit(decision);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // 庄家加牌并弃牌
+  void add_and_discard(const Card& upcard) override {
+    assert(hand.size() > 0);
+    print_hand();
+    cout << "Discard upcard: [-1]\n";
+    cout << "Human player " << name << ", please select a card to discard:\n\n";
+    int index;
+    std::cin >> index;
+    if (index == -1) {
+      return;  // 弃掉翻开的牌
+    } else {
+      hand.push_back(upcard);
+      hand.erase(hand.begin() + index);
+      sort_hand();
+    }
+  }
+
+  // 领先出牌
+  Card lead_card(Suit trump) override {
+    print_hand();
+    cout << "Human player " << name << ", please select a card:\n";
+    int index;
+    std::cin >> index;
+    Card lead_card = hand[index];
+    hand.erase(hand.begin() + index);
+    return lead_card;
+  }
+
+  // 跟牌
+  Card play_card(const Card& led_card, Suit trump) override {
+    print_hand();
+    cout << "Human player " << name << ", please select a card:\n";
+    int index;
+    std::cin >> index;
+    Card play_card = hand[index];
+    hand.erase(hand.begin() + index);
+    return play_card;
+  }
+
+  // 析构函数
+  ~HumanPlayer() override = default;
 };
 
-////////////////// Player Factory Implementation ////////////////
-Player* Player_factory(const std::string &name, const std::string &strategy) {
-    if (strategy == "Simple") {
-        return new SimplePlayer(name);  // Return a Simple AI Player
-    }
-    if (strategy == "Human") {
-        return new HumanPlayer(name);   // Return a Human-controlled Player
-    }
-    // If an invalid strategy is provided, throw an exception
-    throw std::invalid_argument("Invalid strategy: " + strategy);
+/////////////////////// Player_factory 函数实现 ///////////////////////
+// 创建玩家工厂函数，根据策略创建相应的玩家对象
+Player* Player_factory(const std::string& name,
+                       const std::string& strategy) {
+  if (strategy == "Simple") {
+    // 创建 SimplePlayer 对象
+    return new SimplePlayer(name);
+  }
+  if (strategy == "Human") {
+    // 创建 HumanPlayer 对象
+    return new HumanPlayer(name);
+  }
+  // 如果策略无效，终止程序
+  assert(false);
+  return nullptr;
 }
 
-// Operator overload for printing a player's name
-std::ostream &operator<<(std::ostream &os, const Player &p) {
-    os << p.get_name();
-    return os;
-}
-
-
-// new 10.14
- #include "Player.hpp"
-#include "Card.hpp"
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <cassert>
-
-using namespace std;
-
-////////////////// Simple Player Implementation ////////////////
-class SimplePlayer : public Player {
-public:
-    SimplePlayer(const std::string& name_in) : name(name_in) {}
-
-    const std::string &get_name() const override {
-        return name;
-    }
-
-    // Function to decide whether to make trump
-    bool make_trump(const Card &upcard, bool is_dealer, int round, Suit &order_up_suit) const override {
-        int high_trumps = 0;
-        Suit upcard_suit = upcard.get_suit();
-        Suit next_suit = Suit_next(upcard_suit);
-        Suit trump_suit;
-
-        if (round == 1) {
-            trump_suit = upcard_suit;
-        } else {
-            trump_suit = next_suit;
-        }
-
-        // Count the number of high trump cards (Jack or higher)
-        for (const Card& card : hand) {
-            if (card.is_trump(trump_suit)) {
-                if (card.get_rank() == JACK ||
-                    card.get_rank() == ACE ||
-                    card.get_rank() == KING ||
-                    card.get_rank() == QUEEN ||
-                    card.get_rank() == TEN) {
-                    ++high_trumps;
-                }
-            }
-        }
-
-        if (round == 1) {
-            if (high_trumps >= 2) {
-                order_up_suit = trump_suit;
-                return true;
-            }
-        } else {
-            if (high_trumps >= 1) {
-                order_up_suit = trump_suit;
-                return true;
-            }
-            if (is_dealer) {
-                order_up_suit = trump_suit;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Lead a card
-    Card lead_card(Suit trump) override {
-        // Find highest non-trump card
-        auto it = std::max_element(hand.begin(), hand.end(),
-            [trump](const Card &a, const Card &b) {
-                if (!a.is_trump(trump) && !b.is_trump(trump)) {
-                    return a < b;  // Compare non-trump cards
-                }
-                if (!a.is_trump(trump)) {
-                    return false; // a is non-trump, b is trump
-                }
-                if (!b.is_trump(trump)) {
-                    return true;  // b is non-trump, a is trump
-                }
-                return Card_less(a, b, trump); // Both are trump
-            });
-
-        if (it != hand.end() && !it->is_trump(trump)) {
-            // Play highest non-trump card
-            Card to_play = *it;
-            hand.erase(it);
-            return to_play;
-        } else {
-            // Play highest trump card
-            auto it_trump = std::max_element(hand.begin(), hand.end(),
-                [trump](const Card &a, const Card &b) {
-                    return Card_less(a, b, trump);
-                });
-            Card to_play = *it_trump;
-            hand.erase(it_trump);
-            return to_play;
-        }
-    }
-
-
-    // Play a card
-    Card play_card(const Card &led_card, Suit trump) override {
-        assert(hand.size() >= 1);
-        Suit led_suit = led_card.get_suit();
-        vector<Card> led_suit_card;
-        bool have_led = false;
-        std::sort(hand.begin(), hand.end());
-        int min = 0;
-        int max = 0;
-        // check for led suit
-        for (int i = 0; i < hand.size(); i++){
-            if (hand[i].get_suit() == led_suit){
-                have_led = true;
-                if (Card_less(hand[max], hand[i], led_card,trump)){
-                    
-                    max =i;
-                }
-            }
-        }
-        if (have_led){
-        Card led_return = hand[max];
-        hand.erase(hand.begin() + max);
-        return led_return;
-        }
-        
-        // if no led card in hand
-   
-        for (int i = 0; i < hand.size(); i++){
-            if(Card_less(hand[i], hand[min], trump)){
-                min = i;
-            }
-        }
-        Card non_led_return = hand[min];
-        hand.erase((hand.begin() + min));
-        return non_led_return;
-        
-    }
-
-    // Add a card to the hand and discard the lowest card if hand is full
-    void add_and_discard(const Card &upcard) override {
-        hand.push_back(upcard); // Add upcard to hand
-        Suit trump = upcard.get_suit();
-        int min = 0;
-        int size = hand.size();
-
-        for (int i = 1; i < size; ++i){
-            if (Card_less(hand[i], hand[min],trump)){
-                min = i;
-            }
-        }
-        if(hand.size() > MAX_HAND_SIZE){
-            hand.erase(hand.begin() + min);
-        }
-
-    }
-
-    // Add a card to the player's hand
-    void add_card(const Card &card) override {
-        hand.push_back(card);
-        std::sort(hand.begin(), hand.end());  // Ensure hand is sorted
-    }
-
-private:
-    static const int MAX_HAND_SIZE = 5;
-    std::string name;
-    std::vector<Card> hand;
-
-    // Helper function to play the lowest card
-    Card play_lowest_card(Suit trump) {
-        auto it = std::min_element(hand.begin(), hand.end(),
-            [trump](const Card &a, const Card &b) {
-                return Card_less(a, b, trump);
-            });
-        Card to_play = *it;
-        hand.erase(it);
-        return to_play;
-    }
-};
-
-////////////////// Human Player Implementation ////////////////
-class HumanPlayer : public Player {
-public:
-    HumanPlayer(const std::string& name_in) : name(name_in) {}
-    const std::string &get_name() const override {
-        return name;
-    }
-    bool make_trump(const Card &upcard, bool is_dealer, int round, Suit &order_up_suit) const override {
-        print_hand();
-        cout << "Human player " << name << ", please enter a suit, or \"pass\":" << endl;
-        std::string decision;
-        cin >> decision;
-        if (decision != "pass") {
-            order_up_suit = string_to_suit(decision);
-            return true;
-        }
-        return false;
-    }
-    Card lead_card(Suit trump) override {
-        print_hand();
-        cout << "Human player " << name << ", please select a card:" << endl;
-        int index;
-        cin >> index;
-        Card to_play = hand[index];
-        hand.erase(hand.begin() + index);
-        return to_play;
-    }
-    Card play_card(const Card &led_card, Suit trump) override {
-        print_hand();
-        cout << "Human player " << name << ", please select a card:" << endl;
-        int index;
-        cin >> index;
-        Card to_play = hand[index];
-        hand.erase(hand.begin() + index);
-        return to_play;
-    }
-    void add_and_discard(const Card &upcard) override {
-        print_hand();
-        cout << "Discard upcard: [-1]" << endl;
-        cout << "Human player " << name << ", please select a card to discard:" << endl;
-        int index;
-        cin >> index;
-        if (index == -1) {
-            // Discard the upcard
-        } else {
-            hand.push_back(upcard);
-            hand.erase(hand.begin() + index);
-        }
-    }
-    void add_card(const Card &card) override {
-        hand.push_back(card);
-        std::sort(hand.begin(), hand.end());
-    }
-private:
-    std::string name;
-    std::vector<Card> hand;
-    void print_hand() const {
-        for (size_t i = 0; i < hand.size(); ++i) {
-            cout << "[" << i << "] " << hand[i] << endl;
-        }
-    }
-};
-
-////////////////// Player Factory Implementation ////////////////
-Player* Player_factory(const std::string &name, const std::string &strategy) {
-    if (strategy == "Simple") {
-        return new SimplePlayer(name);  // Return a Simple AI Player
-    }
-    if (strategy == "Human") {
-        return new HumanPlayer(name);   // Return a Human-controlled Player
-    }
-    // If an invalid strategy is provided, throw an exception
-    throw std::invalid_argument("Invalid strategy: " + strategy);
-}
-
-// Operator overload for printing a player's name
-std::ostream &operator<<(std::ostream &os, const Player &p) {
-    os << p.get_name();
-    return os;
+// 重载输出运算符，输出玩家姓名
+std::ostream& operator<<(std::ostream& os, const Player& p) {
+  os << p.get_name();
+  return os;
 }
